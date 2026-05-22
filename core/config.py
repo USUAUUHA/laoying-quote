@@ -91,6 +91,7 @@ MATERIAL_LIBRARY: Dict[str, Dict[str, Any]] = {
     "304抛光板": {"density": 7.93, "unit_price": 22.0, "category": "不锈钢"},
     "SGCC": {"density": 7.85, "unit_price": 8.0, "category": "碳钢/镀锌板"},
     "Q235": {"density": 7.85, "unit_price": 8.0, "category": "碳钢/镀锌板"},
+    "冷板": {"density": 7.85, "unit_price": 8.0, "category": "碳钢/镀锌板"},
 }
 
 COL_MATERIAL_PRICE = "材料单价(元/kg)"

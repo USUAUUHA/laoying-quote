@@ -24,6 +24,12 @@ def normalize_material_name(s: Any) -> str:
         return "6061铝板"
     if re.fullmatch(r"1060.*", t):
         return "1060铝板"
+    if re.search(r"5052.*铝", t, re.I):
+        return "5052铝板"
+    if re.search(r"6061.*铝", t, re.I):
+        return "6061铝板"
+    if re.search(r"1060.*铝", t, re.I):
+        return "1060铝板"
     if t in ("304", "SUS304", "不锈钢304"):
         return "SUS304"
     if t in ("316", "SUS316"):
@@ -36,6 +42,16 @@ def normalize_material_name(s: Any) -> str:
         return "Q235"
     if t.upper() == "SGCC":
         return "SGCC"
+    return t
+
+
+def normalize_surface_name(s: Any) -> str:
+    t = str(s).strip() if s is not None else ""
+    if not t or t == "无":
+        return "无"
+    for opt in ("喷粉", "喷砂", "氧化", "抛光", "镀锌"):
+        if opt in t:
+            return opt
     return t
 
 
@@ -58,7 +74,7 @@ def _parse_dim_two(s: Any) -> Tuple[Optional[float], Optional[float]]:
 def _find_header_row(df: pd.DataFrame) -> int:
     for i in range(min(45, len(df))):
         row = " ".join(str(x) for x in df.iloc[i].tolist())
-        if "材质" in row and ("板厚" in row or "零件" in row or "名称" in row or "切割" in row):
+        if "材质" in row:
             return i
     return 0
 
@@ -71,7 +87,7 @@ def map_headers_to_fields(headers: List[str]) -> Dict[str, int]:
             continue
         if ("零件名称" in h) or (h.endswith("名称") and "零件" in h):
             out.setdefault("料品名称", j)
-        elif h == "材质" or (h.startswith("材质") and len(h) < 8):
+        elif h == "材质" or h.startswith("材质"):
             out.setdefault("材质", j)
         elif "板厚" in h or h == "厚度" or ("厚度" in h and "mm" in h):
             out.setdefault("厚度(mm)", j)
@@ -95,6 +111,8 @@ def map_headers_to_fields(headers: List[str]) -> Dict[str, int]:
             out.setdefault("攻丝数量", j)
         elif "焊接" in h:
             out.setdefault("焊接长度(mm)", j)
+        elif "表面处理" in h:
+            out.setdefault("表面处理", j)
         elif "缩略图" in h or "图" == h:
             continue
     return out
@@ -118,7 +136,10 @@ def _load_sheet_bytes(name: str, raw: bytes) -> pd.DataFrame:
         except UnicodeDecodeError:
             bio.seek(0)
             return pd.read_csv(bio, header=None, encoding="gbk")
-    return pd.read_excel(bio, header=None)
+    xl = pd.ExcelFile(bio)
+    if "零件总表" in xl.sheet_names:
+        return pd.read_excel(xl, sheet_name="零件总表", header=None)
+    return pd.read_excel(xl, header=None)
 
 
 def _cluster_ocr_boxes_to_rows(boxes: List[Any]) -> List[List[str]]:
@@ -188,7 +209,7 @@ def build_quote_from_sheet_df(df: pd.DataFrame) -> pd.DataFrame:
     headers = [str(df.iloc[hr, j]).strip() for j in range(df.shape[1])]
     cmap = map_headers_to_fields(headers)
     if "材质" not in cmap:
-        raise ValueError("未识别到「材质」列，请检查表头或使用 Excel 导出后再导入。")
+        raise ValueError(f"未识别到「材质」列，请检查表头或使用 Excel 导出后再导入。\n识别的表头：{headers}")
 
     out_rows: List[Dict[str, Any]] = []
     for r in range(hr + 1, len(df)):
@@ -239,6 +260,10 @@ def build_quote_from_sheet_df(df: pd.DataFrame) -> pd.DataFrame:
                 fv, ok = _to_float(v, 0.0)
                 if ok:
                     br[col] = fv
+        if "表面处理" in cmap:
+            sv = _cell_at(df, r, cmap["表面处理"])
+            if sv is not None:
+                br["表面处理"] = normalize_surface_name(sv)
         out_rows.append(br)
 
     if not out_rows:

@@ -92,7 +92,7 @@ def compute_ly_export_breakdown(
         "材质": str(calc_res["_material_name"]),
         "料费": round(float(calc_res["_material_cost"]), 2),
         "激光切割": round(float(calc_res["_cutting_cost"]), 2),
-        "打磨": round(float(calc_res["打磨(元)"]), 2),
+        "打磨": round(float(calc_res["打磨(元)"]), 3),
         "穿孔单价": round(float(calc_res["_pierce_unit"]), 4),
         "穿孔数量": nums["穿孔数量"],
         "激光+穿孔": round(float(calc_res["_cutting_cost"]) + float(calc_res["_pierce_cost"]), 2),

@@ -165,8 +165,8 @@ def calc_quote_row(
     total_weight_display_kg = single_weight_kg * qty
 
     material_cost = total_weight_display_kg * unit_price
-    cutting_cost = meter * thickness_mm * p["cutting_rate"]
-    grinding_base = p["grinding_small"] if (length_mm < 200 or width_mm < 200) else p["grinding_large"]
+    cutting_cost = meter * thickness_mm * p["cutting_rate"] * p["grinding_mult"]
+    grinding_base = p["grinding_small"] if (length_mm <= 200 or width_mm <= 200) else p["grinding_large"]
     grinding_cost = grinding_base * qty * p["grinding_mult"]
     pierce_unit = thickness_mm * p["pierce_per_t"]
     pierce_cost = pierce_count * pierce_unit
@@ -185,7 +185,7 @@ def calc_quote_row(
     tapping_unit_price = p["tap_al"] if is_aluminum else p["tap_steel"]
     tapping_qty_total = tapping_count * qty
     tapping_cost = tapping_unit_price * tapping_count * qty
-    laser_mark_cost = 0.0
+    laser_mark_cost = nums["激光打标"] * p["grinding_mult"]
 
     total_process_cost = (
         cutting_cost
@@ -275,7 +275,7 @@ def recalc_table(
         seq_values.append(str(row_no))
         out.at[idx, COL_WEIGHT_AFTER_THICK] = round(float(calc_res[COL_WEIGHT_AFTER_THICK]), 6)
         out.at[idx, "总重(kg)"] = round(float(calc_res["_total_weight_display_kg"]), 6)
-        out.at[idx, "打磨(元)"] = round(float(calc_res["打磨(元)"]), 2)
+        out.at[idx, "打磨(元)"] = round(float(calc_res["打磨(元)"]), 3)
         out.at[idx, "材料费(元)"] = round(float(calc_res["材料费(元)"]), 2)
         out.at[idx, "总加工费(元)"] = round(float(calc_res["总加工费(元)"]), 2)
         out.at[idx, "表面处理费(元)"] = round(float(calc_res["表面处理费(元)"]), 2)
